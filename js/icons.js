@@ -8,6 +8,11 @@
   'use strict';
   const fallback = {
     home: '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
+    timeline: '<path d="M4 18h16M4 12l5-5 5 4 6-6"/><circle cx="4" cy="18" r="1.4"/><circle cx="9" cy="7" r="1.4"/><circle cx="14" cy="11" r="1.4"/><circle cx="20" cy="5" r="1.4"/>',
+    assignment: '<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M9 11h6M9 15h6"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    menu_book: '<path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1m0-14c3-2 6-2 9-1v14c-3-1-6-1-9 1V6z"/>',
+    workspace_premium: '<circle cx="12" cy="9" r="6"/><path d="m8 14-2 8 6-3 6 3-2-8M12 5l1.2 2.4 2.6.4-1.9 1.8.4 2.6L12 11l-2.3 1.2.4-2.6-1.9-1.8 2.6-.4z"/>',
     account_tree: '<path d="M5 4v16m0-12h6m-6 8h6"/><rect x="11" y="4" width="9" height="7" rx="2"/><rect x="11" y="13" width="9" height="7" rx="2"/>',
     description: '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M15 2v6h5M9 13h7M9 17h7"/>',
     calendar_month: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-11 4h4m-4 4h4"/>',
