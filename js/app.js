@@ -12,17 +12,17 @@
   const toastNode = $('#toast');
   const routes = {
     inicio: ['Inicio', 'home'],
-    seguimiento: ['Mi proceso', 'account_tree'],
+    seguimiento: ['Mi proceso', 'timeline'],
     documentos: ['Documentos', 'description'],
-    tramites: ['Trámites', 'list_alt'],
+    tramites: ['Trámites', 'assignment'],
     agenda: ['Agenda', 'calendar_month'],
     notificaciones: ['Notificaciones', 'notifications'],
-    guias: ['Guías', 'help'],
-    plus: ['Habi Plus', 'star'],
-    menu: ['Explorar', 'grid_view']
+    guias: ['Guías', 'menu_book'],
+    plus: ['Habi Plus', 'workspace_premium'],
+    menu: ['Explorar', 'menu']
   };
   const tabs = ['inicio', 'seguimiento', 'documentos', 'agenda', 'menu'];
-  const state = {
+  const initialState = () => ({
     page: Object.hasOwn(routes, location.hash.slice(1)) ? location.hash.slice(1) : 'inicio',
     docFilter: 'Todos', taskFilter: 'Todos', notifFilter: 'Todas', guideFilter: 'Todas',
     read: new Set(data.notifications.filter(n => n.read).map(n => n.id)),
@@ -30,14 +30,15 @@
     year: 2026, month: 9, selectedDate: null,
     query: '', regularDate: '2026-11-30', earlyDate: '2026-11-15',
     result: null, plusError: ''
-  };
+  });
+  const state = initialState();
   let toastTimer = null;
   let previousFocus = null;
 
   const navigationButton = key => {
     const [label, symbol] = routes[key];
     const active = state.page === key || (key === 'menu' && !tabs.includes(state.page));
-    return `<button type="button" data-route="${key}" class="${active ? 'active' : ''}" aria-label="${label}" ${active ? 'aria-current="page"' : ''}>${I(symbol)}<span>${E(label === 'Documentos' ? 'Docs' : label === 'Mi proceso' ? 'Proceso' : label === 'Explorar' ? 'Más' : label)}</span></button>`;
+    return `<button type="button" data-route="${key}" class="${active ? 'active' : ''}" aria-label="${label}" ${active ? 'aria-current="page"' : ''}>${I(symbol)}<span>${E(label === 'Mi proceso' ? 'Proceso' : label === 'Explorar' ? 'Más' : label)}</span></button>`;
   };
 
   function render() {
@@ -55,6 +56,7 @@
     state.page = target;
     render();
     main.scrollTop = 0;
+    main.focus({ preventScroll: true });
     if (updateHistory && location.hash !== `#${target}`) history.pushState({ page: target }, '', `#${target}`);
   }
 
@@ -67,9 +69,10 @@
 
   function openSheet(title, body, footer = actionButton('Entendido', 'close', 'primary', false)) {
     previousFocus = document.activeElement;
-    sheet.innerHTML = `<div class="sheet-handle"></div><div class="sheet-header"><h2>${E(title)}</h2><button type="button" class="circle-action" data-action="close" aria-label="Cerrar ventana">${I('close')}</button></div><div class="sheet-body">${body}</div><div class="sheet-footer">${footer}</div>`;
+    sheet.innerHTML = `<div class="sheet-handle"></div><div class="sheet-header"><h2 id="sheetTitle">${E(title)}</h2><button type="button" class="circle-action" data-action="close" aria-label="Cerrar ventana">${I('close')}</button></div><div class="sheet-body">${body}</div><div class="sheet-footer">${footer}</div>`;
     sheet.hidden = false;
     scrim.hidden = false;
+    ['.appbar', '.app-content', '.bottom-nav', '.desktop-rail'].forEach(selector => { $(selector).inert = true; });
     sheet.querySelector('[data-action="close"]').focus();
   }
 
@@ -77,6 +80,7 @@
     if (sheet.hidden) return;
     sheet.hidden = true;
     scrim.hidden = true;
+    ['.appbar', '.app-content', '.bottom-nav', '.desktop-rail'].forEach(selector => { $(selector).inert = false; });
     sheet.innerHTML = '';
     if (previousFocus && previousFocus.isConnected) previousFocus.focus();
     previousFocus = null;
@@ -89,7 +93,7 @@
     const status = simulated ? 'En revisión' : documentData.status;
     const canUpload = status === 'Pendiente';
     const body = `<div class="row" style="margin-bottom:16px">${tag(status)}<span class="muted">${shortDate(documentData.updated)}</span></div>
-      <p>${E(documentData.message)}</p><p>${E(documentData.instructions)}</p>
+      <p>${E(documentData.message)}</p><p>${E(documentData.instructions)}</p>${documentData.dueDate ? `<p><strong>Fecha límite ilustrativa:</strong> ${longDate(documentData.dueDate)}</p>` : ''}
       ${info('Esta es una vista de demostración: no se consultan ni almacenan documentos reales.')}
       ${canUpload ? `<label class="form-field"><span>Seleccionar archivo (PDF, JPG o PNG, máximo 10 MB)</span><input id="uploadInput" class="input" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" /></label>` : ''}`;
     openSheet(documentData.name, body, canUpload ? actionButton('Simular entrega', `upload:${id}`, 'primary', false, 'upload_file') : actionButton('Cerrar detalle', 'close', 'ghost', false));
@@ -107,24 +111,39 @@
     openSheet(guide.name, `<span class="tag outlined">${E(guide.category)}</span><p>${E(guide.subtitle)}</p><ol class="guide-step-list">${guide.steps.map(step => `<li>${E(step)}</li>`).join('')}</ol>${info('Guía de orientación general. Los documentos y condiciones definitivos deben validarse con Habi.')}`);
   }
 
+  function uploadError(message) {
+    const errorNode = $('#uploadError');
+    const input = $('#uploadInput');
+    if (errorNode) { errorNode.hidden = false; errorNode.textContent = message; }
+    if (input) { input.setAttribute('aria-invalid', 'true'); input.focus(); }
+    showToast(message);
+  }
+
   function processUpload(id) {
+    const documentData = data.documents.find(d => d.id === id);
+    if (!documentData || documentData.status !== 'Pendiente' || state.uploaded.has(id)) {
+      return uploadError('Este documento no está habilitado para una nueva entrega.');
+    }
     const selected = $('#uploadInput')?.files?.[0];
-    if (!selected) return showToast('Selecciona un archivo antes de continuar.');
-    const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
-    const suffixOk = /\.(pdf|jpe?g|png)$/i.test(selected.name);
-    if (!suffixOk || (selected.type && !allowed.includes(selected.type))) return showToast('Solo se permiten archivos PDF, JPG y PNG.');
-    if (selected.size > 10 * 1024 * 1024) return showToast('El archivo debe ocupar menos de 10 MB.');
-    if (selected.size === 0) return showToast('No puedes adjuntar un archivo vacío.');
+    if (!selected) return uploadError('Selecciona un archivo antes de continuar.');
+    const allowed = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
+    const extension = selected.name.split('.').pop().toLowerCase();
+    if (!Object.hasOwn(allowed, extension) || (selected.type && selected.type !== allowed[extension])) {
+      return uploadError('Solo se permiten archivos PDF, JPG y PNG.');
+    }
+    if (selected.size === 0) return uploadError('No puedes adjuntar un archivo vacío.');
+    if (selected.size > 10 * 1024 * 1024) return uploadError('El archivo debe ocupar como máximo 10 MB.');
     state.uploaded.add(id);
     closeSheet();
     render();
-    showToast('Entrega simulada. No se ha enviado el archivo.');
+    showToast('Entrega simulada. El estado cambió a En revisión solo en esta sesión.');
   }
 
   function setFilter(field, choice, allowed) {
     if (!allowed.includes(choice)) return;
     state[field] = choice;
     render();
+    main.querySelector(`[data-action="${field === 'docFilter' ? 'docfilter' : field === 'taskFilter' ? 'taskfilter' : field === 'notifFilter' ? 'notifilter' : 'guidefilter'}:${choice}"]`)?.focus({preventScroll: true});
   }
 
   function changeMonth(delta) {
@@ -143,6 +162,15 @@
     switch (cmd) {
       case 'go': return navigate(value);
       case 'close': return closeSheet();
+      case 'reset': return openSheet('Reiniciar demostración', `<p>Se borrarán únicamente los cambios temporales de esta sesión: documentos simulados, notificaciones leídas, filtros y resultados de Habi Plus.</p>${info('No se borra ningún expediente real ni se envía información a servidores.')}`, `${actionButton('Cancelar', 'close', 'ghost', false)}${actionButton('Sí, reiniciar demostración', 'confirmReset', 'primary', false, 'restart_alt')}`);
+      case 'confirmReset': {
+        const defaults = initialState();
+        Object.keys(defaults).forEach(key => { state[key] = defaults[key]; });
+        closeSheet();
+        navigate('inicio');
+        showToast('Demostración reiniciada. Todos los datos volvieron al estado inicial.');
+        return;
+      }
       case 'profile': return openSheet('Mi perfil', `<div class="inline-icon" style="margin-bottom:13px"><span class="avatar" style="display:grid;place-items:center">LC</span><div><strong>Lucía</strong><br><span class="muted">Cliente de demostración</span></div></div><p><strong>Expediente:</strong> ${E(data.user.reference)}</p>${info('Los datos personales son ficticios. El inicio de sesión real no forma parte de este mockup.')}`);
       case 'document': return showDocument(value);
       case 'upload': return processUpload(value);
@@ -159,6 +187,13 @@
         data.notifications.forEach(item => state.read.add(item.id));
         render();
         return showToast('Todas las notificaciones están marcadas como leídas.');
+      }
+      case 'openNotif': {
+        const notification = data.notifications.find(item => item.id === Number(value));
+        if (!notification || !notification.target) return;
+        state.read.add(notification.id);
+        render();
+        return act(notification.target);
       }
       case 'guide': return showGuide(value);
       case 'event': return showEvent(value);
@@ -190,6 +225,8 @@
     }
     if (state.plusError) state.result = null;
     render();
+    const feedback = main.querySelector(state.plusError ? '#plusError' : '#plusResult');
+    if (feedback) feedback.focus({preventScroll: true});
   }
 
   document.addEventListener('click', event => {
@@ -208,8 +245,23 @@
       input.focus();
       input.setSelectionRange(cursor, cursor);
     }
-    if (event.target.id === 'regularDate') state.regularDate = event.target.value;
-    if (event.target.id === 'earlyDate') state.earlyDate = event.target.value;
+    if (event.target.id === 'uploadInput') {
+      const errorNode = $('#uploadError');
+      if (errorNode) { errorNode.textContent = ''; errorNode.hidden = true; }
+      event.target.removeAttribute('aria-invalid');
+    }
+    if (event.target.id === 'regularDate' || event.target.id === 'earlyDate') {
+      if (event.target.id === 'regularDate') state.regularDate = event.target.value;
+      else state.earlyDate = event.target.value;
+      state.plusError = '';
+      state.result = null;
+      $('#plusError')?.remove();
+      $('#plusResult')?.remove();
+      $('#regularDate')?.removeAttribute('aria-invalid');
+      $('#earlyDate')?.removeAttribute('aria-invalid');
+      $('#regularDate')?.setAttribute('aria-describedby', 'plusHelp');
+      $('#earlyDate')?.setAttribute('aria-describedby', 'plusHelp');
+    }
   });
   document.addEventListener('submit', event => {
     if (event.target.id !== 'plusForm') return;

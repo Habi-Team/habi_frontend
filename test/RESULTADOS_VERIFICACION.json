@@ -1,0 +1,103 @@
+{
+  "tipo": "Pruebas estáticas de renderizado y contratos; no pruebas de usuario ni E2E en navegador",
+  "version": "2.1",
+  "fecha": "2026-10-29",
+  "cantidad": 23,
+  "aprobadas": 23,
+  "fallidas": 0,
+  "pruebas": [
+    {
+      "prueba": "Render inicio",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render seguimiento",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render documentos",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render tramites",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render agenda",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render notificaciones",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render guias",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render plus",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Render menu",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Documentos: 4 elementos",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Documentos: 2 pendientes",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Entrega cambia filtro pendientes",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Inicio refleja entrega simulada",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "En revisión: original y simulado",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Trámites refleja en revisión",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Guías: vacío correcto",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Guías: coincidencia",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Notificaciones: vacío correcto",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Habi Plus: resultado de ejemplo",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Habi Plus: error accesible",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Agenda: filtra día con evento",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Menú: restablecimiento",
+      "resultado": "APROBADA"
+    },
+    {
+      "prueba": "Diferencia fechas 15 días",
+      "resultado": "APROBADA"
+    }
+  ],
+  "limitacion": "Navegador Chromium bloqueado por política administrativa URLBlocklist=*; no se ejecutaron interacciones reales en browser ni capturas de versión 2.1."
+}
